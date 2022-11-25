@@ -56,6 +56,8 @@ public interface IUnCompressor {
         return new LZ4UnCompressor();
       case GZIP:
         return new GZIPUnCompressor();
+      case LZO:
+        return new LZOUnCompressor();
       default:
         throw new CompressionTypeNotSupportedException(name.toString());
     }

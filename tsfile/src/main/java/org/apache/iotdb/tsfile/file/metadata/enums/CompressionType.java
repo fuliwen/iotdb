@@ -58,6 +58,8 @@ public enum CompressionType {
         return CompressionType.GZIP;
       case 7:
         return CompressionType.LZ4;
+      case 8:
+        return CompressionType.LZO;
       default:
         throw new IllegalArgumentException("Invalid input: " + compressor);
     }

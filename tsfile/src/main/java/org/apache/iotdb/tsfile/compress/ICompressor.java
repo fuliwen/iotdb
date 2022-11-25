@@ -69,6 +69,8 @@ public interface ICompressor extends Serializable {
         return new IOTDBLZ4Compressor();
       case GZIP:
         return new GZIPCompressor();
+      case LZO:
+        return new LZOCompressor();
       default:
         throw new CompressionTypeNotSupportedException(name.toString());
     }
