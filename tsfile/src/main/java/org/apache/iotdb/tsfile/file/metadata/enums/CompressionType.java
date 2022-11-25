@@ -30,7 +30,9 @@ public enum CompressionType {
 
   /** LZ4 */
   // NOTICE: To ensure the compatibility of existing files, do not change the byte LZ4 binds to.
-  LZ4(".lz4", (byte) 7);
+  LZ4(".lz4", (byte) 7),
+
+  LZO(".lzo", (byte) 8);
 
   private final String extensionName;
   private final byte index;

@@ -22,6 +22,8 @@ package org.apache.iotdb.tsfile.compress;
 import org.apache.iotdb.tsfile.exception.compress.CompressionTypeNotSupportedException;
 import org.apache.iotdb.tsfile.file.metadata.enums.CompressionType;
 
+import io.airlift.compress.Decompressor;
+import io.airlift.compress.lzo.LzoDecompressor;
 import net.jpountz.lz4.LZ4Compressor;
 import net.jpountz.lz4.LZ4Factory;
 import net.jpountz.lz4.LZ4SafeDecompressor;
@@ -310,6 +312,45 @@ public interface IUnCompressor {
     @Override
     public CompressionType getCodecName() {
       return CompressionType.GZIP;
+    }
+  }
+
+  class LZOUnCompressor implements IUnCompressor {
+
+    @Override
+    public int getUncompressedLength(byte[] array, int offset, int length) throws IOException {
+      throw new UnsupportedOperationException("unsupported get uncompress length");
+    }
+
+    @Override
+    public int getUncompressedLength(ByteBuffer buffer) throws IOException {
+      throw new UnsupportedOperationException("unsupported get uncompress length");
+    }
+
+    @Override
+    public byte[] uncompress(byte[] byteArray) throws IOException {
+      throw new UnsupportedOperationException("unsupported get uncompress length");
+    }
+
+    @Override
+    public int uncompress(byte[] byteArray, int offset, int length, byte[] output, int outOffset)
+        throws IOException {
+      Decompressor decompressor = new LzoDecompressor();
+      return decompressor.decompress(byteArray, offset, length, output, outOffset, output.length);
+    }
+
+    @Override
+    public int uncompress(ByteBuffer compressed, ByteBuffer uncompressed) throws IOException {
+      int length = compressed.remaining();
+      byte[] dataBefore = new byte[length];
+      compressed.get(dataBefore, 0, length);
+      new LzoDecompressor().decompress(ByteBuffer.wrap(dataBefore), uncompressed);
+      return uncompressed.limit();
+    }
+
+    @Override
+    public CompressionType getCodecName() {
+      return CompressionType.LZO;
     }
   }
 }

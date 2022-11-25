@@ -21,8 +21,11 @@ package org.apache.iotdb.tsfile.compress;
 
 import org.apache.iotdb.tsfile.exception.compress.CompressionTypeNotSupportedException;
 import org.apache.iotdb.tsfile.exception.compress.GZIPCompressOverflowException;
+import org.apache.iotdb.tsfile.exception.compress.LZOCompressOverflowException;
 import org.apache.iotdb.tsfile.file.metadata.enums.CompressionType;
 
+import io.airlift.compress.Compressor;
+import io.airlift.compress.lzo.LzoCompressor;
 import net.jpountz.lz4.LZ4Compressor;
 import net.jpountz.lz4.LZ4Factory;
 import org.xerial.snappy.Snappy;
@@ -37,6 +40,7 @@ import java.util.zip.GZIPOutputStream;
 
 import static org.apache.iotdb.tsfile.file.metadata.enums.CompressionType.GZIP;
 import static org.apache.iotdb.tsfile.file.metadata.enums.CompressionType.LZ4;
+import static org.apache.iotdb.tsfile.file.metadata.enums.CompressionType.LZO;
 import static org.apache.iotdb.tsfile.file.metadata.enums.CompressionType.SNAPPY;
 
 /** compress data according to type in schema. */
@@ -309,6 +313,65 @@ public interface ICompressor extends Serializable {
     @Override
     public CompressionType getType() {
       return GZIP;
+    }
+  }
+
+  class LZOCompressor implements ICompressor {
+
+    @Override
+    public byte[] compress(byte[] data) throws IOException {
+      if (null == data) {
+        return new byte[0];
+      }
+      Compressor compressor = new LzoCompressor();
+      ByteBuffer output = ByteBuffer.allocateDirect(compressor.maxCompressedLength(data.length));
+      compressor.compress(ByteBuffer.wrap(data), output);
+      return output.array();
+    }
+
+    @Override
+    public byte[] compress(byte[] data, int offset, int length) throws IOException {
+      if (null == data) {
+        return new byte[0];
+      }
+      byte[] dataBefore = new byte[length];
+      System.arraycopy(data, offset, dataBefore, 0, length);
+      Compressor compressor = new LzoCompressor();
+      ByteBuffer output = ByteBuffer.allocateDirect(compressor.maxCompressedLength(data.length));
+      compressor.compress(ByteBuffer.wrap(data), output);
+      return output.array();
+    }
+
+    @Override
+    public int compress(byte[] data, int offset, int length, byte[] compressed) throws IOException {
+
+      byte[] dataBefore = new byte[length];
+      System.arraycopy(data, offset, dataBefore, 0, length);
+      Compressor compressor = new LzoCompressor();
+      ByteBuffer output = ByteBuffer.allocateDirect(compressor.maxCompressedLength(data.length));
+      compressor.compress(ByteBuffer.wrap(data), output);
+      byte[] outputArray = output.array();
+      if (outputArray.length > compressed.length) {
+        throw new LZOCompressOverflowException();
+      }
+      System.arraycopy(outputArray, 0, compressed, 0, outputArray.length);
+      return outputArray.length;
+    }
+
+    @Override
+    public int compress(ByteBuffer data, ByteBuffer compressed) throws IOException {
+      new LzoCompressor().compress(data, compressed);
+      return data.limit();
+    }
+
+    @Override
+    public int getMaxBytesForCompression(int uncompressedDataSize) {
+      return new LzoCompressor().maxCompressedLength(uncompressedDataSize);
+    }
+
+    @Override
+    public CompressionType getType() {
+      return LZO;
     }
   }
 }
